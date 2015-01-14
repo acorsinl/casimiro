@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"net/http"
 )
 
@@ -46,11 +47,11 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	output := APIMultipleOutput{}
-	output.Data = make([]map[string]interface{}, len(wishlists))
-	for index := range wishlists {
+	output.Data = make([]map[string]interface{}, len(resources))
+	for index := range resources {
 		output.Data[index] = make(map[string]interface{})
-		output.Data[index]["id"] = wishlists[index].Hash
-		output.Data[index]["href"] = wishlists[index].Href
+		output.Data[index]["id"] = resources[index].Id
+		output.Data[index]["href"] = resources[index].Href
 	}
 	APIMultipleResults(http.StatusOK, "OK", output, w)
 }
@@ -91,7 +92,7 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 
 	data := make(map[string]interface{})
 	data["href"] = resource.Href
-	data["id"] = wishlist.Id
+	data["id"] = resource.Id
 	APISingleResult(http.StatusCreated, "Resource added", data, w)
 }
 
@@ -117,8 +118,8 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 
 	resource.Href = ResourcesUrl + "/" + resource.Id
 	data := make(map[string]interface{})
-	data["href"] = wishlist.Href
-	data["id"] = wishlist.Hash
+	data["href"] = resource.Href
+	data["id"] = resource.Id
 	APISingleResult(http.StatusOK, "OK", data, w)
 }
 
@@ -138,7 +139,7 @@ func UpdateResource(w http.ResponseWriter, r *http.Request) {
 	resource.Id = resourceId
 	resource.Href = ResourcesUrl + "/" + resource.Id
 
-	stmt := ""
+	stmt = ""
 	query, err := db.Prepare(stmt)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)

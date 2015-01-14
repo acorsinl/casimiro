@@ -37,7 +37,7 @@ func main() {
 	}
 	log.Println("Database connection stablished")
 
-	r := mux.NewRouter
+	r := mux.NewRouter()
 	r.HandleFunc(ResourcesUrl, GetResources).Methods("GET")
 	r.HandleFunc(ResourcesUrl, AddResource).Methods("POST")
 	r.HandleFunc(ResourcesUrl+"/{resourceId}", ResourceOptions).Methods("OPTIONS")
