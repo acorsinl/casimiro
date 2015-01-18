@@ -32,6 +32,7 @@ package main
 import (
 	"code.google.com/p/go-uuid/uuid"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -45,4 +46,14 @@ func UnixTimestamp() int32 {
 
 func NewUUID() string {
 	return uuid.New()
+}
+
+func GetQueryParameters(urlString string) (url.Values, error) {
+	u, err := url.Parse(urlString)
+	if err != nil {
+		return nil, err
+	}
+
+	m, _ := url.ParseQuery(u.RawQuery)
+	return m, nil
 }

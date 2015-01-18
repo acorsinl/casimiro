@@ -42,6 +42,8 @@ const (
 	ListenPort   = "PORT"
 	DbUri        = "DB_URI"
 	UserHeader   = "gs-user"
+	PagingOffset = 0
+	PagingLimit  = 10
 	ResourcesUrl = "/resources"
 )
 

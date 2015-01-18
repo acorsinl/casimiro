@@ -32,6 +32,7 @@ package main
 import (
 	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 type Resource struct {
@@ -43,16 +44,30 @@ type Resource struct {
 func GetResources(w http.ResponseWriter, r *http.Request) {
 	var resources []Resource
 	var stmt string
+	var offset, limit int
 	user := r.Header.Get(UserHeader)
+	queryParams, err := GetQueryParameters(r.RequestURI)
+	if err != nil {
+		APIReturn(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
 
-	stmt = ""
+	if queryParams.Get("$offset") == "" || queryParams.Get("$limit") == "" {
+		offset = PagingOffset
+		limit = PagingLimit
+	} else {
+		offset, _ = strconv.Atoi(queryParams.Get("$offset"))
+		limit, _ = strconv.Atoi(queryParams.Get("$limit"))
+	}
+
+	stmt = "LIMIT ?, ?"
 	query, err := db.Prepare(stmt)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 
-	rows, err := query.Query()
+	rows, err := query.Query(offset, limit)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
