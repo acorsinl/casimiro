@@ -30,6 +30,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
+	"database/sql"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
@@ -159,6 +160,10 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 	}
 	err = query.QueryRow().Scan()
 	if err != nil {
+		if err == sql.ErrNoRows {
+			APIReturn(http.StatusNotFound, "Not found", w)
+			return
+		}
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
