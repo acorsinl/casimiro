@@ -97,6 +97,9 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 		output.Data[index]["id"] = resources[index].Id
 		output.Data[index]["href"] = resources[index].Href
 	}
+	output.Paging = make(map[string]interface{})
+	output.Paging["offset"] = PagingOffset
+	output.Paging["limit"] = PagingLimit
 	APIMultipleResults(http.StatusOK, "OK", output, w)
 }
 

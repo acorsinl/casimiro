@@ -53,6 +53,7 @@ func APISingleResult(resultCode int, resultInfo string, data map[string]interfac
 type APIMultipleOutput struct {
 	Result map[string]interface{}   `json:"result"`
 	Data   []map[string]interface{} `json:"data"`
+	Paging map[string]interface{}   `json:"paging"`
 }
 
 func APIMultipleResults(resultCode int, resultInfo string, data APIMultipleOutput, w http.ResponseWriter) {
