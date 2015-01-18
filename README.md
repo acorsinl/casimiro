@@ -1,5 +1,5 @@
 #Casimiro
-A basic template for REST servers in go created as a template for personal use.
+A basic template for REST servers in golang created for personal use.
 
 #Setup
 ##server.go
