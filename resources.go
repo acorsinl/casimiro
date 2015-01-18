@@ -123,7 +123,7 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stmt = ""
-	query, err := db.Prepare(stmt)
+	query, err := tx.Prepare(stmt)
 	if err != nil {
 		tx.Rollback()
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
