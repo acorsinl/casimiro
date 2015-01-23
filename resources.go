@@ -46,7 +46,7 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 	var resources []Resource
 	var stmt string
 	var offset, limit int
-	user := r.Header.Get(UserHeader)
+	userId := r.Header.Get(UserHeader)
 	queryParams, err := GetQueryParameters(r.RequestURI)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
@@ -68,7 +68,7 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := query.Query(offset, limit)
+	rows, err := query.Query(userId, offset, limit)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -149,7 +149,7 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 func GetResource(w http.ResponseWriter, r *http.Request) {
 	var resource Resource
 	var stmt string
-	user := r.Header.Get(UserHeader)
+	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
 	stmt = ""
@@ -158,7 +158,7 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
-	err = query.QueryRow().Scan()
+	err = query.QueryRow(userId, resourceId).Scan()
 	if err != nil {
 		if err == sql.ErrNoRows {
 			APIReturn(http.StatusNotFound, "Not found", w)
@@ -179,7 +179,7 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 func UpdateResource(w http.ResponseWriter, r *http.Request) {
 	var resource Resource
 	var stmt string
-	user := r.Header.Get(UserHeader)
+	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
 	err := DecodeJSON(r, &resource)
@@ -197,7 +197,7 @@ func UpdateResource(w http.ResponseWriter, r *http.Request) {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
-	_, err = query.Exec()
+	_, err = query.Exec(userId)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -218,7 +218,7 @@ func PatchResource(w http.ResponseWriter, r *http.Request) {
 // DeleteResource deletes a given resource owned by the current user
 func DeleteResource(w http.ResponseWriter, r *http.Request) {
 	var stmt string
-	user := r.Header.Get(UserHeader)
+	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
 	stmt = ""
@@ -227,7 +227,7 @@ func DeleteResource(w http.ResponseWriter, r *http.Request) {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
-	_, err = query.Exec()
+	_, err = query.Exec(userId, resourceId)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
