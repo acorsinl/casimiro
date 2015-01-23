@@ -138,7 +138,6 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 // UpdateResource allows to full update a record in the database
 func UpdateResource(w http.ResponseWriter, r *http.Request) {
 	var resource Resource
-	var stmt string
 	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
@@ -151,15 +150,13 @@ func UpdateResource(w http.ResponseWriter, r *http.Request) {
 	resource.Id = resourceId
 	resource.Href = ResourcesUrl + "/" + resource.Id
 
-	stmt = ""
-	query, err := db.Prepare(stmt)
+	resourceUpdated, err := updateResource(resource, userId)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
-	_, err = query.Exec(userId)
-	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+	if resourceUpdated == false {
+		APIReturn(http.StatusInternalServerError, "Resource not updated", w)
 		return
 	}
 
@@ -177,19 +174,16 @@ func PatchResource(w http.ResponseWriter, r *http.Request) {
 
 // DeleteResource deletes a given resource owned by the current user
 func DeleteResource(w http.ResponseWriter, r *http.Request) {
-	var stmt string
 	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
-	stmt = ""
-	query, err := db.Prepare(stmt)
+	deletedResource, err := deleteResource(userId, resourceId)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
-	_, err = query.Exec(userId, resourceId)
-	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+	if deletedResource == false {
+		APIReturn(http.StatusInternalServerError, "Resource not deleted", w)
 		return
 	}
 
@@ -271,4 +265,33 @@ func getResource(userId, resourceId string) (*Resource, error) {
 	}
 
 	return &resource, nil
+}
+
+func deleteResource(userId, resourceId string) (bool, error) {
+
+	stmt := ""
+	query, err := db.Prepare(stmt)
+	if err != nil {
+		return false, err
+	}
+	_, err = query.Exec(userId, resourceId)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func updateResource(resource Resource, userId string) (bool, error) {
+	stmt := ""
+	query, err := db.Prepare(stmt)
+	if err != nil {
+		return false, err
+	}
+	_, err = query.Exec(resource, userId)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
