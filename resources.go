@@ -87,7 +87,6 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 // AddResource creates a new resource owned by the current user
 func AddResource(w http.ResponseWriter, r *http.Request) {
 	var resource Resource
-	var stmt string
 	var err error
 
 	if err = DecodeJSON(r, &resource); err != nil {
@@ -97,26 +96,15 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 
 	resource.Id = NewUUID()
 
-	tx, err := db.Begin()
+	resourceAdded, err := addResource(resource)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
-
-	stmt = ""
-	query, err := tx.Prepare(stmt)
-	if err != nil {
-		tx.Rollback()
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+	if resourceAdded != true {
+		APIReturn(http.StatusInternalServerError, "Resource not added", w)
 		return
 	}
-	_, err = query.Exec()
-	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-
-	tx.Commit()
 
 	data := make(map[string]interface{})
 	data["href"] = resource.Href
@@ -127,24 +115,16 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 // GetResource retrieves a resource owned by the current user given
 // its resource Id.
 func GetResource(w http.ResponseWriter, r *http.Request) {
-	var resource Resource
-	var stmt string
 	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
-	stmt = ""
-	query, err := db.Prepare(stmt)
+	resource, err := getResource(userId, resourceId)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
-	err = query.QueryRow(userId, resourceId).Scan()
-	if err != nil {
-		if err == sql.ErrNoRows {
-			APIReturn(http.StatusNotFound, "Not found", w)
-			return
-		}
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+	if resource == nil {
+		APIReturn(http.StatusNotFound, "Not found", w)
 		return
 	}
 
@@ -224,6 +204,7 @@ func ResourceOptions(w http.ResponseWriter, r *http.Request) {
 }
 
 /**********************Model Methods ************************/
+
 func getResources(userId string, offset, limit int) ([]Resource, error) {
 	var resources []Resource
 
@@ -250,4 +231,44 @@ func getResources(userId string, offset, limit int) ([]Resource, error) {
 	}
 
 	return resources, nil
+}
+
+func addResource(resource Resource) (bool, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return false, err
+	}
+
+	stmt := ""
+	query, err := tx.Prepare(stmt)
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+	_, err = query.Exec(resource)
+	if err != nil {
+		return false, err
+	}
+
+	tx.Commit()
+
+	return true, nil
+}
+
+func getResource(userId, resourceId string) (*Resource, error) {
+	var resource Resource
+	stmt := ""
+	query, err := db.Prepare(stmt)
+	if err != nil {
+		return &Resource{}, err
+	}
+	err = query.QueryRow(userId, resourceId).Scan()
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &Resource{}, err
+		}
+		return &Resource{}, err
+	}
+
+	return &resource, nil
 }
