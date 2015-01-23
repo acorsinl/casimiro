@@ -41,10 +41,10 @@ type Resource struct {
 	Href string `json:"href,omitempty"`
 }
 
+/**********************Controler Methods ************************/
+
 // GetResources retrieves all resources for the current logged user
 func GetResources(w http.ResponseWriter, r *http.Request) {
-	var resources []Resource
-	var stmt string
 	var offset, limit int
 	userId := r.Header.Get(UserHeader)
 	queryParams, err := GetQueryParameters(r.RequestURI)
@@ -61,33 +61,13 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 		limit, _ = strconv.Atoi(queryParams.Get("$limit"))
 	}
 
-	stmt = "LIMIT ?, ?"
-	query, err := db.Prepare(stmt)
+	resources, err := getResources(userId, offset, limit)
 	if err != nil {
 		APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
-
-	rows, err := query.Query(userId, offset, limit)
-	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		resource := Resource{}
-
-		if err := rows.Scan(); err != nil {
-			APIReturn(http.StatusInternalServerError, err.Error(), w)
-			return
-		}
-		resource.Href = ResourcesUrl + "/" + resource.Id
-		resources = append(resources, resource)
-	}
-
-	if len(resources) == 0 {
-		APIReturn(http.StatusNotFound, "Not found", w)
+	if resources == nil {
+		APIReturn(http.StatusNotFound, err.Error(), w)
 		return
 	}
 
@@ -241,4 +221,33 @@ func ResourceOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, "+UserHeader)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+/**********************Model Methods ************************/
+func getResources(userId string, offset, limit int) ([]Resource, error) {
+	var resources []Resource
+
+	stmt := "? LIMIT ?, ?"
+	query, err := db.Prepare(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := query.Query(userId, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		resource := Resource{}
+
+		if err := rows.Scan(); err != nil {
+			return nil, err
+		}
+		resource.Href = ResourcesUrl + "/" + resource.Id
+		resources = append(resources, resource)
+	}
+
+	return resources, nil
 }
