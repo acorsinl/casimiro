@@ -1,6 +1,10 @@
 #Casimiro
 A basic template for REST servers in golang created for personal use.
 
+There is a lot of stuff to be done yet, 
+check [TODO.md] (https://github.com/acorsinl/casimiro/blob/master/TODO.md)
+for further information.
+
 #Setup
 ##server.go
 ###Constants
