@@ -41,7 +41,7 @@ func Error(w http.ResponseWriter, error string, code int) {
 }
 
 func UnixTimestamp() int32 {
-	return int32(time.Now().Unix())
+	return int32(time.Now().UTC().Unix())
 }
 
 func NewUUID() string {
