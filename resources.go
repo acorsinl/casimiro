@@ -295,3 +295,24 @@ func updateResource(resource Resource, userId string) (bool, error) {
 
 	return true, nil
 }
+
+func resourceExists(resourceId string) (bool, error) {
+	var resource Resource
+
+	stmt := ""
+	query, err := db.Prepare(stmt)
+	if err != nil {
+		return false, err
+	}
+	defer query.Close()
+
+	err = query.QueryRow(resourceId).Scan(&resource)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, err
+		}
+		return false, err
+	}
+
+	return true, nil
+}
