@@ -207,6 +207,7 @@ func getResources(userId string, offset, limit int) ([]Resource, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer query.Close()
 
 	rows, err := query.Query(userId, offset, limit)
 	if err != nil {
@@ -239,6 +240,8 @@ func addResource(resource Resource) (bool, error) {
 		tx.Rollback()
 		return false, err
 	}
+	defer query.Close()
+
 	_, err = query.Exec(resource)
 	if err != nil {
 		return false, err
@@ -256,6 +259,8 @@ func getResource(userId, resourceId string) (*Resource, error) {
 	if err != nil {
 		return &Resource{}, err
 	}
+	defer query.Close()
+
 	err = query.QueryRow(userId, resourceId).Scan()
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -274,6 +279,8 @@ func deleteResource(userId, resourceId string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer query.Close()
+
 	_, err = query.Exec(userId, resourceId)
 	if err != nil {
 		return false, err
@@ -288,6 +295,8 @@ func updateResource(resource Resource, userId string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer query.Close()
+
 	_, err = query.Exec(resource, userId)
 	if err != nil {
 		return false, err
