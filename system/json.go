@@ -27,38 +27,47 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package main
+package system
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"log"
 	"net/http"
 )
 
-func APIReturn(code int, info string, w http.ResponseWriter) {
-	output := make(map[string]map[string]interface{})
-	output["result"] = make(map[string]interface{})
-	output["result"]["code"] = code
-	output["result"]["info"] = info
-	WriteJSON(output, code, w)
+func WriteJSON(input interface{}, status int, w http.ResponseWriter) {
+	output, err := EncodeJSON(input)
+	if err != nil {
+		log.Println("JSON Encoding failed")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	w.Write(output)
 }
 
-func APISingleResult(resultCode int, resultInfo string, data map[string]interface{}, w http.ResponseWriter) {
-	output := make(map[string]map[string]interface{})
-	output["result"] = make(map[string]interface{})
-	output["result"]["code"] = resultCode
-	output["result"]["info"] = resultInfo
-	output["data"] = data
-	WriteJSON(output, resultCode, w)
+func DecodeJSON(r *http.Request, destination interface{}) error {
+	content, err := ioutil.ReadAll(r.Body)
+	r.Body.Close()
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(content, destination)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-type APIMultipleOutput struct {
-	Result map[string]interface{}   `json:"result"`
-	Data   []map[string]interface{} `json:"data"`
-	Paging map[string]interface{}   `json:"paging"`
-}
+func EncodeJSON(input interface{}) ([]byte, error) {
+	var b []byte
+	var err error
 
-func APIMultipleResults(resultCode int, resultInfo string, data APIMultipleOutput, w http.ResponseWriter) {
-	data.Result = make(map[string]interface{})
-	data.Result["code"] = resultCode
-	data.Result["info"] = resultInfo
-	WriteJSON(data, resultCode, w)
+	b, err = json.Marshal(input)
+	if err != nil {
+		log.Println("Encoding failed")
+	}
+
+	return b, nil
 }

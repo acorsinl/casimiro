@@ -31,6 +31,7 @@ package main
 
 import (
 	"database/sql"
+	"github.com/acorsinl/casimiro/system"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
@@ -47,9 +48,9 @@ type Resource struct {
 func GetResources(w http.ResponseWriter, r *http.Request) {
 	var offset, limit int
 	userId := r.Header.Get(UserHeader)
-	queryParams, err := GetQueryParameters(r.RequestURI)
+	queryParams, err := system.GetQueryParameters(r.RequestURI)
 	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 
@@ -63,15 +64,15 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 
 	resources, err := getResources(userId, offset, limit)
 	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	if resources == nil {
-		APIReturn(http.StatusNotFound, err.Error(), w)
+		system.APIReturn(http.StatusNotFound, err.Error(), w)
 		return
 	}
 
-	output := APIMultipleOutput{}
+	output := system.APIMultipleOutput{}
 	output.Data = make([]map[string]interface{}, len(resources))
 	for index := range resources {
 		output.Data[index] = make(map[string]interface{})
@@ -81,7 +82,7 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 	output.Paging = make(map[string]interface{})
 	output.Paging["offset"] = PagingOffset
 	output.Paging["limit"] = PagingLimit
-	APIMultipleResults(http.StatusOK, "OK", output, w)
+	system.APIMultipleResults(http.StatusOK, "OK", output, w)
 }
 
 // AddResource creates a new resource owned by the current user
@@ -89,27 +90,27 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 	var resource Resource
 	var err error
 
-	if err = DecodeJSON(r, &resource); err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+	if err = system.DecodeJSON(r, &resource); err != nil {
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 
-	resource.Id = NewUUID()
+	resource.Id = system.NewUUID()
 
 	resourceAdded, err := addResource(resource)
 	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	if resourceAdded != true {
-		APIReturn(http.StatusInternalServerError, "Resource not added", w)
+		system.APIReturn(http.StatusInternalServerError, "Resource not added", w)
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["href"] = resource.Href
 	data["id"] = resource.Id
-	APISingleResult(http.StatusCreated, "Resource added", data, w)
+	system.APISingleResult(http.StatusCreated, "Resource added", data, w)
 }
 
 // GetResource retrieves a resource owned by the current user given
@@ -120,11 +121,11 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 
 	resource, err := getResource(userId, resourceId)
 	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	if resource == nil {
-		APIReturn(http.StatusNotFound, "Not found", w)
+		system.APIReturn(http.StatusNotFound, "Not found", w)
 		return
 	}
 
@@ -132,7 +133,7 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 	data := make(map[string]interface{})
 	data["href"] = resource.Href
 	data["id"] = resource.Id
-	APISingleResult(http.StatusOK, "OK", data, w)
+	system.APISingleResult(http.StatusOK, "OK", data, w)
 }
 
 // UpdateResource allows to full update a record in the database
@@ -141,9 +142,9 @@ func UpdateResource(w http.ResponseWriter, r *http.Request) {
 	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
-	err := DecodeJSON(r, &resource)
+	err := system.DecodeJSON(r, &resource)
 	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 
@@ -152,24 +153,24 @@ func UpdateResource(w http.ResponseWriter, r *http.Request) {
 
 	resourceUpdated, err := updateResource(resource, userId)
 	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	if resourceUpdated == false {
-		APIReturn(http.StatusInternalServerError, "Resource not updated", w)
+		system.APIReturn(http.StatusInternalServerError, "Resource not updated", w)
 		return
 	}
 
 	data := make(map[string]interface{})
 	data["href"] = resource.Href
 	data["id"] = resource.Id
-	APISingleResult(http.StatusOK, "Resource modified", data, w)
+	system.APISingleResult(http.StatusOK, "Resource modified", data, w)
 }
 
 // PatchResource allows partial updates of a given resource owned
 // by the current user
 func PatchResource(w http.ResponseWriter, r *http.Request) {
-	APIReturn(http.StatusNotImplemented, "Patch method not implemented yet", w)
+	system.APIReturn(http.StatusNotImplemented, "Patch method not implemented yet", w)
 }
 
 // DeleteResource deletes a given resource owned by the current user
@@ -179,15 +180,15 @@ func DeleteResource(w http.ResponseWriter, r *http.Request) {
 
 	deletedResource, err := deleteResource(userId, resourceId)
 	if err != nil {
-		APIReturn(http.StatusInternalServerError, err.Error(), w)
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	if deletedResource == false {
-		APIReturn(http.StatusInternalServerError, "Resource not deleted", w)
+		system.APIReturn(http.StatusInternalServerError, "Resource not deleted", w)
 		return
 	}
 
-	APIReturn(http.StatusOK, "Resource deleted", w)
+	system.APIReturn(http.StatusOK, "Resource deleted", w)
 }
 
 // ResourceOptions returns the Access-Control tier headers for this API resource
