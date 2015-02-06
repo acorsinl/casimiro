@@ -79,7 +79,7 @@ func main() {
 	r.HandleFunc(ResourcesUrl+"/{resourceId}", ResourceOptions).Methods("OPTIONS")
 	http.Handle("/", r)
 
-	log.Println("Server listening on port " + ListenPort)
+	log.Println("Server listening on port " + listPort)
 	log.Fatal(http.ListenAndServe(":"+listPort, Log(http.DefaultServeMux)))
 }
 
