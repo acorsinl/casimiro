@@ -100,3 +100,19 @@ func GetResourceById(database *sql.DB, userId, resourceId string) (*Resource, er
 
 	return &resource, nil
 }
+
+func DeleteResourceById(database *sql.DB, userId, resourceId string) error {
+	stmt := ""
+	query, err := database.Prepare(stmt)
+	if err != nil {
+		return err
+	}
+	defer query.Close()
+
+	_, err = query.Exec(userId, resourceId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

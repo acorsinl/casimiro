@@ -181,12 +181,8 @@ func DeleteResource(w http.ResponseWriter, r *http.Request) {
 	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
-	deletedResource, err := deleteResource(userId, resourceId)
+	err := models.DeleteResourceById(db, userId, resourceId)
 	if err != nil {
-		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if deletedResource == false {
 		system.APIReturn(http.StatusInternalServerError, "Resource not deleted", w)
 		return
 	}
