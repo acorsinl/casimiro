@@ -75,14 +75,14 @@ func (m *Model) InsertResource(resource *Resource) error {
 	return nil
 }
 
-func InsertResourceWithTransaction(db *sql.DB, resource *Resource) error {
-	tx, err := db.Begin()
+func (m *Model) InsertResourceWithTransaction(resource *Resource) error {
+	tx, err := m.DBSession.Begin()
 	if err != nil {
 		return err
 	}
 
 	stmt := ""
-	query, err := db.Prepare(stmt)
+	query, err := m.DBSession.Prepare(stmt)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -150,11 +150,11 @@ func (m *Model) GetResources(userId string, offset, limit int) ([]Resource, erro
 	return resources, nil
 }
 
-func ResourceExists(db *sql.DB, resourceId string) (bool, error) {
+func (m *Model) ResourceExists(resourceId string) (bool, error) {
 	var resource Resource
 
 	stmt := ""
-	query, err := db.Prepare(stmt)
+	query, err := m.DBSession.Prepare(stmt)
 	if err != nil {
 		return false, err
 	}
