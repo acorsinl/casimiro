@@ -30,7 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"database/sql"
+	"github.com/acorsinl/casimiro/controllers/api"
+	"github.com/acorsinl/casimiro/models"
 	"github.com/acorsinl/casimiro/system"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -40,18 +41,13 @@ import (
 )
 
 const (
-	ListenPort   = "PORT"
-	DbUri        = "DB_URI"
-	UserHeader   = "gs-user"
-	PagingOffset = 0
-	PagingLimit  = 10
+	ListenPort = "PORT"
+	DbUri      = "DB_URI"
 )
 
-var db *sql.DB
+//var db *sql.DB
 
 func main() {
-	var err error
-
 	listPort := os.Getenv(ListenPort)
 	dbUri := os.Getenv(DbUri)
 
@@ -59,24 +55,18 @@ func main() {
 		log.Fatal("Required env vars not found")
 	}
 
-	db, err = sql.Open("mysql", dbUri)
-	if err != nil {
-		log.Fatal("Can't open database")
-	}
-	if err = db.Ping(); err != nil {
-		log.Fatal("Can't connect to database")
-	}
-	log.Println("Database connection stablished")
+	model := models.Model{}
+	model.InitDB(dbUri)
 
 	r := mux.NewRouter()
-	r.HandleFunc(system.ResourcesUrl, GetResources).Methods("GET")
-	r.HandleFunc(system.ResourcesUrl, AddResource).Methods("POST")
-	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", ResourceOptions).Methods("OPTIONS")
-	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", GetResource).Methods("GET")
-	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", UpdateResource).Methods("PUT")
-	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", PatchResource).Methods("PATCH")
-	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", DeleteResource).Methods("DELETE")
-	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", ResourceOptions).Methods("OPTIONS")
+	r.HandleFunc(system.ResourcesUrl, api.GetResources).Methods("GET")
+	r.HandleFunc(system.ResourcesUrl, api.AddResource).Methods("POST")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", api.ResourceOptions).Methods("OPTIONS")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", api.GetResource).Methods("GET")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", api.UpdateResource).Methods("PUT")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", api.PatchResource).Methods("PATCH")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", api.DeleteResource).Methods("DELETE")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", api.ResourceOptions).Methods("OPTIONS")
 	http.Handle("/", r)
 
 	log.Println("Server listening on port " + listPort)

@@ -33,16 +33,35 @@ package models
 import (
 	"database/sql"
 	"github.com/acorsinl/casimiro/system"
+	"log"
 )
+
+type Model struct {
+	DBSession *sql.DB
+}
+
+func (m *Model) InitDB(dbUri string) {
+	db, err := sql.Open("mysql", dbUri)
+	if err != nil {
+		log.Fatal("Can't open database")
+	}
+
+	if err = db.Ping(); err != nil {
+		log.Fatal("Can't connect to database")
+	}
+
+	log.Println("Database connection stablished")
+	m.DBSession = db
+}
 
 type Resource struct {
 	Id   string `json:"id"`
 	Href string `json:"href"`
 }
 
-func InsertResource(db *sql.DB, resource *Resource) error {
+func (m *Model) InsertResource(resource *Resource) error {
 	stmt := ""
-	query, err := db.Prepare(stmt)
+	query, err := m.DBSession.Prepare(stmt)
 	if err != nil {
 		return err
 	}
@@ -81,11 +100,11 @@ func InsertResourceWithTransaction(db *sql.DB, resource *Resource) error {
 	return nil
 }
 
-func GetResourceById(db *sql.DB, userId, resourceId string) (*Resource, error) {
+func (m *Model) GetResourceById(userId, resourceId string) (*Resource, error) {
 	var resource Resource
 
 	stmt := ""
-	query, err := db.Prepare(stmt)
+	query, err := m.DBSession.Prepare(stmt)
 	if err != nil {
 		return &Resource{}, err
 	}
@@ -102,11 +121,11 @@ func GetResourceById(db *sql.DB, userId, resourceId string) (*Resource, error) {
 	return &resource, nil
 }
 
-func GetResources(db *sql.DB, userId string, offset, limit int) ([]Resource, error) {
+func (m *Model) GetResources(userId string, offset, limit int) ([]Resource, error) {
 	var resources []Resource
 
 	stmt := "? LIMIT ?, ?"
-	query, err := db.Prepare(stmt)
+	query, err := m.DBSession.Prepare(stmt)
 	if err != nil {
 		return nil, err
 	}
@@ -151,9 +170,9 @@ func ResourceExists(db *sql.DB, resourceId string) (bool, error) {
 	return true, nil
 }
 
-func DeleteResourceById(db *sql.DB, userId, resourceId string) error {
+func (m *Model) DeleteResourceById(userId, resourceId string) error {
 	stmt := ""
-	query, err := db.Prepare(stmt)
+	query, err := m.DBSession.Prepare(stmt)
 	if err != nil {
 		return err
 	}
@@ -167,9 +186,9 @@ func DeleteResourceById(db *sql.DB, userId, resourceId string) error {
 	return nil
 }
 
-func UpdateResource(db *sql.DB, resource *Resource, userId string) error {
+func (m *Model) UpdateResource(resource *Resource, userId string) error {
 	stmt := ""
-	query, err := db.Prepare(stmt)
+	query, err := m.DBSession.Prepare(stmt)
 	if err != nil {
 		return err
 	}

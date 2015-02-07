@@ -27,7 +27,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package main
+package api
 
 import (
 	"github.com/acorsinl/casimiro/models"
@@ -42,12 +42,11 @@ type Resource struct {
 	Href string `json:"href,omitempty"`
 }
 
-/**********************Controler Methods ************************/
-
 // GetResources retrieves all resources for the current logged user
 func GetResources(w http.ResponseWriter, r *http.Request) {
+	var model models.Model
 	var offset, limit int
-	userId := r.Header.Get(UserHeader)
+	userId := r.Header.Get(system.UserHeader)
 	queryParams, err := system.GetQueryParameters(r.RequestURI)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
@@ -55,14 +54,14 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if queryParams.Get("$offset") == "" || queryParams.Get("$limit") == "" {
-		offset = PagingOffset
-		limit = PagingLimit
+		offset = system.PagingOffset
+		limit = system.PagingLimit
 	} else {
 		offset, _ = strconv.Atoi(queryParams.Get("$offset"))
 		limit, _ = strconv.Atoi(queryParams.Get("$limit"))
 	}
 
-	resources, err := models.GetResources(db, userId, offset, limit)
+	resources, err := model.GetResources(userId, offset, limit)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -76,13 +75,14 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 		output.Data[index]["href"] = resources[index].Href
 	}
 	output.Paging = make(map[string]interface{})
-	output.Paging["offset"] = PagingOffset
-	output.Paging["limit"] = PagingLimit
+	output.Paging["offset"] = system.PagingOffset
+	output.Paging["limit"] = system.PagingLimit
 	system.APIMultipleResults(http.StatusOK, "OK", output, w)
 }
 
 // AddResource creates a new resource owned by the current user
 func AddResource(w http.ResponseWriter, r *http.Request) {
+	var model models.Model
 	var resource *models.Resource
 	var err error
 
@@ -93,7 +93,7 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 
 	resource.Id = system.NewUUID()
 
-	err = models.InsertResource(db, resource)
+	err = model.InsertResource(resource)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -108,7 +108,8 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 // GetResource retrieves a resource owned by the current user given
 // its resource Id.
 func GetResource(w http.ResponseWriter, r *http.Request) {
-	userId := r.Header.Get(UserHeader)
+	var model models.Model
+	userId := r.Header.Get(system.UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
 	/*resource, err := getResource(userId, resourceId)
@@ -121,7 +122,7 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 		return
 	}*/
 
-	resource, err := models.GetResourceById(db, userId, resourceId)
+	resource, err := model.GetResourceById(userId, resourceId)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -136,8 +137,9 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 
 // UpdateResource allows to full update a record in the database
 func UpdateResource(w http.ResponseWriter, r *http.Request) {
+	var model models.Model
 	var resource *models.Resource
-	userId := r.Header.Get(UserHeader)
+	userId := r.Header.Get(system.UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
 	err := system.DecodeJSON(r, &resource)
@@ -149,7 +151,7 @@ func UpdateResource(w http.ResponseWriter, r *http.Request) {
 	resource.Id = resourceId
 	resource.Href = system.ResourcesUrl + "/" + resource.Id
 
-	err = models.UpdateResource(db, resource, userId)
+	err = model.UpdateResource(resource, userId)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -169,10 +171,11 @@ func PatchResource(w http.ResponseWriter, r *http.Request) {
 
 // DeleteResource deletes a given resource owned by the current user
 func DeleteResource(w http.ResponseWriter, r *http.Request) {
-	userId := r.Header.Get(UserHeader)
+	var model models.Model
+	userId := r.Header.Get(system.UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
-	err := models.DeleteResourceById(db, userId, resourceId)
+	err := model.DeleteResourceById(userId, resourceId)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, "Resource not deleted", w)
 		return
@@ -184,6 +187,6 @@ func DeleteResource(w http.ResponseWriter, r *http.Request) {
 // ResourceOptions returns the Access-Control tier headers for this API resource
 func ResourceOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, "+UserHeader)
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, "+system.UserHeader)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 }
