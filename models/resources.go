@@ -101,6 +101,26 @@ func GetResourceById(database *sql.DB, userId, resourceId string) (*Resource, er
 	return &resource, nil
 }
 
+func ResourceExists(database *sql.DB, resourceId string) (bool, error) {
+	var resource Resource
+
+	stmt := ""
+	query, err := database.Prepare(stmt)
+	if err != nil {
+		return false, err
+	}
+	defer query.Close()
+
+	err = query.QueryRow(resourceId).Scan(&resource)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, err
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func DeleteResourceById(database *sql.DB, userId, resourceId string) error {
 	stmt := ""
 	query, err := database.Prepare(stmt)

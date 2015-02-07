@@ -30,7 +30,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package main
 
 import (
-	"database/sql"
 	"github.com/acorsinl/casimiro/models"
 	"github.com/acorsinl/casimiro/system"
 	"github.com/gorilla/mux"
@@ -228,23 +227,6 @@ func getResources(userId string, offset, limit int) ([]Resource, error) {
 	return resources, nil
 }
 
-func deleteResource(userId, resourceId string) (bool, error) {
-
-	stmt := ""
-	query, err := db.Prepare(stmt)
-	if err != nil {
-		return false, err
-	}
-	defer query.Close()
-
-	_, err = query.Exec(userId, resourceId)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
 func updateResource(resource Resource, userId string) (bool, error) {
 	stmt := ""
 	query, err := db.Prepare(stmt)
@@ -255,27 +237,6 @@ func updateResource(resource Resource, userId string) (bool, error) {
 
 	_, err = query.Exec(resource, userId)
 	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func resourceExists(resourceId string) (bool, error) {
-	var resource Resource
-
-	stmt := ""
-	query, err := db.Prepare(stmt)
-	if err != nil {
-		return false, err
-	}
-	defer query.Close()
-
-	err = query.QueryRow(resourceId).Scan(&resource)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, err
-		}
 		return false, err
 	}
 
