@@ -116,13 +116,19 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
-	resource, err := getResource(userId, resourceId)
+	/*resource, err := getResource(userId, resourceId)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	if resource == nil {
 		system.APIReturn(http.StatusNotFound, "Not found", w)
+		return
+	}*/
+
+	resource, err := models.GetResourceById(db, userId, resourceId)
+	if err != nil {
+		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 
@@ -224,50 +230,6 @@ func getResources(userId string, offset, limit int) ([]Resource, error) {
 	}
 
 	return resources, nil
-}
-
-func addResource(resource Resource) (bool, error) {
-	tx, err := db.Begin()
-	if err != nil {
-		return false, err
-	}
-
-	stmt := ""
-	query, err := tx.Prepare(stmt)
-	if err != nil {
-		tx.Rollback()
-		return false, err
-	}
-	defer query.Close()
-
-	_, err = query.Exec(resource)
-	if err != nil {
-		return false, err
-	}
-
-	tx.Commit()
-
-	return true, nil
-}
-
-func getResource(userId, resourceId string) (*Resource, error) {
-	var resource Resource
-	stmt := ""
-	query, err := db.Prepare(stmt)
-	if err != nil {
-		return &Resource{}, err
-	}
-	defer query.Close()
-
-	err = query.QueryRow(userId, resourceId).Scan()
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return &Resource{}, err
-		}
-		return &Resource{}, err
-	}
-
-	return &resource, nil
 }
 
 func deleteResource(userId, resourceId string) (bool, error) {

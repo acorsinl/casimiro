@@ -79,3 +79,24 @@ func InsertResourceWithTransaction(database *sql.DB, resource *Resource) error {
 
 	return nil
 }
+
+func GetResourceById(database *sql.DB, userId, resourceId string) (*Resource, error) {
+	var resource Resource
+
+	stmt := ""
+	query, err := database.Prepare(stmt)
+	if err != nil {
+		return &Resource{}, err
+	}
+	defer query.Close()
+
+	err = query.QueryRow(userId, resourceId).Scan()
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &Resource{}, err
+		}
+		return &Resource{}, err
+	}
+
+	return &resource, nil
+}
