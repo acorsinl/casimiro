@@ -62,13 +62,9 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 		limit, _ = strconv.Atoi(queryParams.Get("$limit"))
 	}
 
-	resources, err := getResources(userId, offset, limit)
+	resources, err := models.GetResources(db, userId, offset, limit)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resources == nil {
-		system.APIReturn(http.StatusNotFound, err.Error(), w)
 		return
 	}
 
@@ -131,7 +127,7 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resource.Href = ResourcesUrl + "/" + resource.Id
+	resource.Href = system.ResourcesUrl + "/" + resource.Id
 	data := make(map[string]interface{})
 	data["href"] = resource.Href
 	data["id"] = resource.Id
@@ -140,7 +136,7 @@ func GetResource(w http.ResponseWriter, r *http.Request) {
 
 // UpdateResource allows to full update a record in the database
 func UpdateResource(w http.ResponseWriter, r *http.Request) {
-	var resource Resource
+	var resource *models.Resource
 	userId := r.Header.Get(UserHeader)
 	resourceId := mux.Vars(r)["resourceId"]
 
@@ -151,15 +147,11 @@ func UpdateResource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resource.Id = resourceId
-	resource.Href = ResourcesUrl + "/" + resource.Id
+	resource.Href = system.ResourcesUrl + "/" + resource.Id
 
-	resourceUpdated, err := updateResource(resource, userId)
+	err = models.UpdateResource(db, resource, userId)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resourceUpdated == false {
-		system.APIReturn(http.StatusInternalServerError, "Resource not updated", w)
 		return
 	}
 
@@ -194,51 +186,4 @@ func ResourceOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, PATCH, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, "+UserHeader)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-/**********************Model Methods ************************/
-
-func getResources(userId string, offset, limit int) ([]Resource, error) {
-	var resources []Resource
-
-	stmt := "? LIMIT ?, ?"
-	query, err := db.Prepare(stmt)
-	if err != nil {
-		return nil, err
-	}
-	defer query.Close()
-
-	rows, err := query.Query(userId, offset, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		resource := Resource{}
-
-		if err := rows.Scan(); err != nil {
-			return nil, err
-		}
-		resource.Href = ResourcesUrl + "/" + resource.Id
-		resources = append(resources, resource)
-	}
-
-	return resources, nil
-}
-
-func updateResource(resource Resource, userId string) (bool, error) {
-	stmt := ""
-	query, err := db.Prepare(stmt)
-	if err != nil {
-		return false, err
-	}
-	defer query.Close()
-
-	_, err = query.Exec(resource, userId)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
 }

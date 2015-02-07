@@ -31,6 +31,7 @@ package main
 
 import (
 	"database/sql"
+	"github.com/acorsinl/casimiro/system"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"log"
@@ -44,7 +45,6 @@ const (
 	UserHeader   = "gs-user"
 	PagingOffset = 0
 	PagingLimit  = 10
-	ResourcesUrl = "/resources"
 )
 
 var db *sql.DB
@@ -69,14 +69,14 @@ func main() {
 	log.Println("Database connection stablished")
 
 	r := mux.NewRouter()
-	r.HandleFunc(ResourcesUrl, GetResources).Methods("GET")
-	r.HandleFunc(ResourcesUrl, AddResource).Methods("POST")
-	r.HandleFunc(ResourcesUrl+"/{resourceId}", ResourceOptions).Methods("OPTIONS")
-	r.HandleFunc(ResourcesUrl+"/{resourceId}", GetResource).Methods("GET")
-	r.HandleFunc(ResourcesUrl+"/{resourceId}", UpdateResource).Methods("PUT")
-	r.HandleFunc(ResourcesUrl+"/{resourceId}", PatchResource).Methods("PATCH")
-	r.HandleFunc(ResourcesUrl+"/{resourceId}", DeleteResource).Methods("DELETE")
-	r.HandleFunc(ResourcesUrl+"/{resourceId}", ResourceOptions).Methods("OPTIONS")
+	r.HandleFunc(system.ResourcesUrl, GetResources).Methods("GET")
+	r.HandleFunc(system.ResourcesUrl, AddResource).Methods("POST")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", ResourceOptions).Methods("OPTIONS")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", GetResource).Methods("GET")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", UpdateResource).Methods("PUT")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", PatchResource).Methods("PATCH")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", DeleteResource).Methods("DELETE")
+	r.HandleFunc(system.ResourcesUrl+"/{resourceId}", ResourceOptions).Methods("OPTIONS")
 	http.Handle("/", r)
 
 	log.Println("Server listening on port " + listPort)

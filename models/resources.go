@@ -32,6 +32,7 @@ package models
 
 import (
 	"database/sql"
+	"github.com/acorsinl/casimiro/system"
 )
 
 type Resource struct {
@@ -39,9 +40,9 @@ type Resource struct {
 	Href string `json:"href"`
 }
 
-func InsertResource(database *sql.DB, resource *Resource) error {
+func InsertResource(db *sql.DB, resource *Resource) error {
 	stmt := ""
-	query, err := database.Prepare(stmt)
+	query, err := db.Prepare(stmt)
 	if err != nil {
 		return err
 	}
@@ -55,14 +56,14 @@ func InsertResource(database *sql.DB, resource *Resource) error {
 	return nil
 }
 
-func InsertResourceWithTransaction(database *sql.DB, resource *Resource) error {
-	tx, err := database.Begin()
+func InsertResourceWithTransaction(db *sql.DB, resource *Resource) error {
+	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 
 	stmt := ""
-	query, err := database.Prepare(stmt)
+	query, err := db.Prepare(stmt)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -80,11 +81,11 @@ func InsertResourceWithTransaction(database *sql.DB, resource *Resource) error {
 	return nil
 }
 
-func GetResourceById(database *sql.DB, userId, resourceId string) (*Resource, error) {
+func GetResourceById(db *sql.DB, userId, resourceId string) (*Resource, error) {
 	var resource Resource
 
 	stmt := ""
-	query, err := database.Prepare(stmt)
+	query, err := db.Prepare(stmt)
 	if err != nil {
 		return &Resource{}, err
 	}
@@ -101,11 +102,40 @@ func GetResourceById(database *sql.DB, userId, resourceId string) (*Resource, er
 	return &resource, nil
 }
 
-func ResourceExists(database *sql.DB, resourceId string) (bool, error) {
+func GetResources(db *sql.DB, userId string, offset, limit int) ([]Resource, error) {
+	var resources []Resource
+
+	stmt := "? LIMIT ?, ?"
+	query, err := db.Prepare(stmt)
+	if err != nil {
+		return nil, err
+	}
+	defer query.Close()
+
+	rows, err := query.Query(userId, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		resource := Resource{}
+
+		if err := rows.Scan(); err != nil {
+			return nil, err
+		}
+		resource.Href = system.ResourcesUrl + "/" + resource.Id
+		resources = append(resources, resource)
+	}
+
+	return resources, nil
+}
+
+func ResourceExists(db *sql.DB, resourceId string) (bool, error) {
 	var resource Resource
 
 	stmt := ""
-	query, err := database.Prepare(stmt)
+	query, err := db.Prepare(stmt)
 	if err != nil {
 		return false, err
 	}
@@ -121,15 +151,31 @@ func ResourceExists(database *sql.DB, resourceId string) (bool, error) {
 	return true, nil
 }
 
-func DeleteResourceById(database *sql.DB, userId, resourceId string) error {
+func DeleteResourceById(db *sql.DB, userId, resourceId string) error {
 	stmt := ""
-	query, err := database.Prepare(stmt)
+	query, err := db.Prepare(stmt)
 	if err != nil {
 		return err
 	}
 	defer query.Close()
 
 	_, err = query.Exec(userId, resourceId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateResource(db *sql.DB, resource *Resource, userId string) error {
+	stmt := ""
+	query, err := db.Prepare(stmt)
+	if err != nil {
+		return err
+	}
+	defer query.Close()
+
+	_, err = query.Exec(resource, userId)
 	if err != nil {
 		return err
 	}
