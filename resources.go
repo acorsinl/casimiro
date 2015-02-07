@@ -31,6 +31,7 @@ package main
 
 import (
 	"database/sql"
+	"github.com/acorsinl/casimiro/models"
 	"github.com/acorsinl/casimiro/system"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -87,7 +88,7 @@ func GetResources(w http.ResponseWriter, r *http.Request) {
 
 // AddResource creates a new resource owned by the current user
 func AddResource(w http.ResponseWriter, r *http.Request) {
-	var resource Resource
+	var resource *models.Resource
 	var err error
 
 	if err = system.DecodeJSON(r, &resource); err != nil {
@@ -97,13 +98,9 @@ func AddResource(w http.ResponseWriter, r *http.Request) {
 
 	resource.Id = system.NewUUID()
 
-	resourceAdded, err := addResource(resource)
+	err = models.InsertResource(db, resource)
 	if err != nil {
 		system.APIReturn(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resourceAdded != true {
-		system.APIReturn(http.StatusInternalServerError, "Resource not added", w)
 		return
 	}
 
